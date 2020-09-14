@@ -269,6 +269,7 @@
     if (self.passcodeType == TOPasscodeTypeCustomAlphanumeric) {
         [self.passcodeView.inputField becomeFirstResponder];
     }
+    self.cancelButton.hidden = !self.allowCancel;
 }
 
 - (void)viewWillDisappear:(BOOL)animated

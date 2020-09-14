@@ -44,7 +44,6 @@ const CGFloat kTOPasscodeKeypadMaxHeight = 330.0f;
 @property (nonatomic, strong) UIView *containerView;
 @property (nonatomic, strong) UILabel *titleLabel;
 @property (nonatomic, strong) UILabel *errorLabel;
-@property (nonatomic, strong) UIButton *optionsButton;
 @property (nonatomic, strong) TOPasscodeInputField *inputField;
 @property (nonatomic, strong) TOPasscodeSettingsKeypadView *keypadView;
 @property (nonatomic, strong) TOPasscodeSettingsWarningLabel *warningLabel;
@@ -143,15 +142,7 @@ const CGFloat kTOPasscodeKeypadMaxHeight = 330.0f;
     self.errorLabel.hidden = YES;
     [self.errorLabel sizeToFit];
     [self.containerView addSubview:self.errorLabel];
-
-    // Create Options button
-    self.optionsButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    [self.optionsButton setTitle:NSLocalizedString(@"Passcode Options", @"") forState:UIControlStateNormal];
-    self.optionsButton.titleLabel.font = [UIFont systemFontOfSize:15.0f];
-    [self.optionsButton sizeToFit];
-    [self.optionsButton addTarget:self action:@selector(optionsCodeButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:self.optionsButton];
-
+  
     // Add callbacks for the keypad view
     self.keypadView.numberButtonTappedHandler = ^(NSInteger number) {
         NSString *numberString = [NSString stringWithFormat:@"%ld", (long)number];
@@ -193,9 +184,6 @@ const CGFloat kTOPasscodeKeypadMaxHeight = 330.0f;
 - (void)updateContentForState:(TOPasscodeSettingsViewState)state type:(TOPasscodeType)type animated:(BOOL)animated
 {
     BOOL variableSizePasscode = (type >= TOPasscodeTypeCustomNumeric);
-
-    // Update the visibility of the options button
-    self.optionsButton.hidden = !(state == TOPasscodeSettingsViewStateEnterNewPasscode);
 
     // Clear the input view
     self.inputField.passcode = nil;
@@ -325,15 +313,10 @@ const CGFloat kTOPasscodeKeypadMaxHeight = 330.0f;
     CGFloat multiplier = reverseDirection ? -1.0f : 1.0f;
     self.containerView.frame = CGRectOffset(self.containerView.frame, self.view.frame.size.width * multiplier, 0.0f);
 
-    // Update the options button alpha depending on transition state
-    self.optionsButton.hidden = NO;
-    self.optionsButton.alpha = (state == TOPasscodeSettingsViewStateEnterNewPasscode) ? 0.0f : 1.0f;
-
     // Perform an animation where the snapshot slides off, and the new container slides in
     id animationBlock = ^{
         snapshot.frame = CGRectOffset(snapshot.frame, -self.view.frame.size.width * multiplier, 0.0f);
         self.containerView.frame = CGRectOffset(self.containerView.frame, -self.view.frame.size.width * multiplier, 0.0f);
-        self.optionsButton.alpha = (state == TOPasscodeSettingsViewStateEnterNewPasscode) ? 1.0f : 0.0f;
     };
 
     // Clean up by removing the snapshot view
@@ -382,11 +365,6 @@ const CGFloat kTOPasscodeKeypadMaxHeight = 330.0f;
     frame.origin.y += topContentHeight;
     self.containerView.frame = CGRectIntegral(frame);
 
-    // Layout the passcode options button
-    frame = self.optionsButton.frame;
-    frame.origin.y = CGRectGetMinY(self.contentOverlapFrame) - kTOPasscodeSettingsOptionsButtonOffset - CGRectGetHeight(frame);
-    frame.origin.x = (CGRectGetWidth(self.view.frame) - CGRectGetWidth(frame)) * 0.5f;
-    self.optionsButton.frame = frame;
 
     // Set frame of title label
     frame = self.titleLabel.frame;
@@ -528,46 +506,6 @@ const CGFloat kTOPasscodeKeypadMaxHeight = 330.0f;
 }
 
 #pragma mark - Button Callbacks -
-
-- (void)optionsCodeButtonTapped:(id)sender
-{
-    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:nil message:nil preferredStyle:UIAlertControllerStyleActionSheet];
-    UIAlertActionStyle style = UIAlertActionStyleDefault;
-
-    __weak typeof(self) weakSelf = self;
-
-    NSArray *types = @[@(TOPasscodeTypeFourDigits),
-                       @(TOPasscodeTypeSixDigits),
-                       @(TOPasscodeTypeCustomNumeric),
-                       @(TOPasscodeTypeCustomAlphanumeric)
-                      ];
-
-
-    NSArray *titles = @[NSLocalizedString(@"4-Digit Numeric Code", @""),
-                        NSLocalizedString(@"6-Digit Numeric Code", @""),
-                        NSLocalizedString(@"Custom Numeric Code", @""),
-                        NSLocalizedString(@"Custom Alphanumeric Code", @"")];
-
-    // Add all the buttons
-    for (NSInteger i = 0; i < types.count; i++) {
-        TOPasscodeType type = [types[i] integerValue];
-        if (type == self.passcodeType) { continue; }
-
-        id handler = ^(UIAlertAction *action) {
-            [weakSelf setPasscodeType:type];
-        };
-        [alertController addAction:[UIAlertAction actionWithTitle:titles[i] style:style handler:handler]];
-    }
-
-    // Cancel button 
-    [alertController addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"Cancel", @"") style:UIAlertActionStyleCancel handler:nil]];
-
-    alertController.modalPresentationStyle = UIModalPresentationPopover;
-    alertController.popoverPresentationController.sourceView = self.optionsButton;
-    alertController.popoverPresentationController.sourceRect = self.optionsButton.bounds;
-    alertController.popoverPresentationController.permittedArrowDirections = UIPopoverArrowDirectionDown | UIPopoverArrowDirectionUp;
-    [self presentViewController:alertController animated:YES completion:nil];
-}
 
 - (void)nextButtonTapped:(id)sender
 {
